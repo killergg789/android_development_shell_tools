@@ -27,14 +27,14 @@ function adbdatabase()
   fi;
 
   # Variables
+  local file_path;
   local name;
-  local path;
 
   # Pull and open
   adbro;
-  path=${1};
-  name=$(basename "${path}");
-  adb pull "${path}";
+  file_path=${1};
+  name=$(basename "${file_path}");
+  adb pull "${file_path}";
   sqlite3 "${name}";
 }
 
@@ -92,8 +92,14 @@ function sepmsg()
   echo '';
 }
 
-# === ADB Intents ===
-function adbintents() { adb shell 'dumpsys package r' > intents.txt; }
+# === ADB Intents List ===
+function adbintents()
+{
+  # Usage: adbintents (List Android intents through adb)
+
+  # List Android intents through adb
+  adb shell 'dumpsys package r' > intents.txt;
+}
 
 # === ADB Camera Enabled / Launcher ===
 function adbcamera()
@@ -117,6 +123,9 @@ function adbkp()
     return;
   fi;
 
+  # Variables
+  local pid;
+
   # Kill process by name
   adbwait;
   adb root;
@@ -126,41 +135,16 @@ function adbkp()
   adb shell "kill '${pid}'";
 }
 
-# === ADB Crash Debuggers ===
-function adbpk()
+# === ADB Data Sizes Study ===
+function ndkstack()
 {
-  # Usage: adbpk (Android mediaserver debug logger)
+  # Usage: ndkstack (Android NDK stacktrace study @Hide)
 
-  # Variables
-  local pid;
-
-  # Android mediaserver debug logger
-  pid=$(adb shell 'ps' | grep mediaserver | awk '{ print $2 }');
-  adb root;
-  adbwait;
-  adb logcat -c;
-  adb shell "kill '${pid}'";
-  adb shell 'ps' | grep mediaserver;
-  sleep 2;
-  adbl;
-}
-function adbms()
-{
-  # Usage: adbms (Android mediaserver debug stracer)
-
-  # Android mediaserver debug stracer
-  pid=$(adb shell 'ps' | grep mediaserver | awk '{ print $2 }');
-  adb root;
-  adbwait;
-  adb logcat -c;
-  adb shell "kill '${pid}'";
-  pid=$(adb shell 'ps' | grep mediaserver | awk '{ print $2 }');
-  adb shell "strace -p '${pid}'";
+  # Android NDK stacktrace study
+  ndk-stack -sym "${ANDROID_DEV_DRIVE}/out/target/product/huashan/symbols" -dump;
 }
 
-function ndkstack() { ndk-stack -sym "${ANDROID_DEV_DRIVE}/out/target/product/huashan/symbols" -dump; }
-function adbwtch() { adbr; while true; do adb shell "cat '${1}'"; done; }
-
+# === ADB Data Sizes Study ===
 function adbdu()
 {
   # Usage: adbdu (Android /data/ sizes study)
@@ -213,16 +197,21 @@ function adbalsa()
 {
   # Usage: adbalsa (Audio cards advanced study)
 
+  # Variables
+  local file_path;
+  local folder;
+  local line;
+
   # Audio cards advanced study
   echo -n '' > alsalog;
   adb shell "cat /proc/asound/card0/id" | tee -a alsalog;
   for line in $(adb shell find /proc/asound/card0 -name info); do
-    path=$(echo -n "${line}" | tr -dc 'a-zA-Z0-9/');
+    file_path=$(echo -n "${line}" | tr -dc 'a-zA-Z0-9/');
     echo '' | tee -a alsalog;
-    echo "=== ${path} ===" | tee -a alsalog;
-    adb shell "cat ${path}" | tee -a alsalog;
-    if [[ "${path}" == *'sub'* ]]; then
-      folder=$(dirname "${path}");
+    echo "=== ${file_path} ===" | tee -a alsalog;
+    adb shell "cat ${file_path}" | tee -a alsalog;
+    if [[ "${file_path}" == *'sub'* ]]; then
+      folder=$(dirname "${file_path}");
       adb shell "cat ${folder}/hw_params" | tee -a alsalog;
       adb shell "cat ${folder}/status" | tee -a alsalog;
       adb shell "cat ${folder}/sw_params" | tee -a alsalog;
